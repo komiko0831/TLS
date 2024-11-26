@@ -17,8 +17,6 @@ def get_key():
 
 pub_key,pri_key = get_key()
 
-print (f'{pub_key}')
-print(f'{pri_key}')
 
 def generate_prime():
     """
@@ -42,7 +40,7 @@ def is_prime(n):
 
 def generate_primitive_root(p):
     """
-    生成一个原根g
+    判断一个数是否为素数
     """
     for g in range(2, p):
         if is_primitive_root(g, p):
@@ -99,29 +97,7 @@ def aes_encrypt(key,msg):
     en_msg = aes.encrypt(msg)
     return en_msg
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+def aes_decrypt(key,en_msg):
+    aes = AES.new(key,AES.MODE_ECB)
+    de_msg = aes.decrypt(en_msg)
+    return de_msg
