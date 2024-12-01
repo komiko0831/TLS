@@ -14,37 +14,22 @@ logging.info('Server started and listening on port 12345')
 client = server.wait_for_connection()
 logging.info(f'Connection from {client.rhost}:{client.rport}')
 
-"""
-Digital Signature
-"""
 
-# 生成服务器的私钥和公钥
-server_private_key,server_public_key = get_key()
-
-# 发送服务器公钥
-client.send(server_public_key)
-logging.info(f'Sent server public key: {server_public_key.hex()}')
-
-# 接收客户端公钥
-client_public_key = client.recv(32)
-logging.info(f'Received client public key: {client_public_key.hex()}')
-
-#server hello
+# 生成并发送问候
 server_hello = b'hello client'
 client.send(server_hello)
-signature = sign_message(server_hello,server_private_key)
+signature = sign(server_hello)
 client.send(signature)
-logging.info(f'Sent sever hello')
+logging.info(f'Sent server hello and signature')
 
-#验签
-rcv = client.recv(1024).decode()
-is_valid =VerifySignature(rcv, signature, server_public_key)
+# 验证签名
+rcv = client.recv(1024)
+is_valid = verify(rcv)
 if is_valid:
     print("Signature is valid.")
 else:
     print("Signature is invalid.")
-logging.info(f'Signature ')
-
+logging.info(f'Signature verification result: {is_valid}')
 
 #生成DH参数
 p = generate_prime()
