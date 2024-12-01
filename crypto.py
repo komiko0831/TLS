@@ -23,11 +23,12 @@ def pad_message(msg):
         msg += " "
     return msg.encode()
 
-def sha256(data):
+def get_hash(message_string):
     """
-    计算SHA-256哈希值
+    计算哈希函数
     """
-    return sha256(data).hexdigest()
+    return sha256(message_string.encode('utf-8')).hexdigest()
+
 
 # AES
 def aes_encrypt(key, msg):
@@ -259,25 +260,67 @@ print("加密后的消息: [略]")
 print("解密后的消息:", decrypted)
 """
 
-#NTRU签名伪代码
-def sha256(data):
-    """
-    计算SHA-256哈希值
-    """
-    return sha256(data).hexdigest()
+# 参数
+N = 7  # 多项式大小
+P = 2  # 私钥模数
+Q = 29  # 消息模数
 
-def sign_message(message,private_key):
-    hash = sha256(message)
-    signature = NTRUsign(hash,private_key)
+poly_h = [23, 23, 23, 24, 23, 24, 23]  # 公钥 h
+poly_f = [1, 1, 1, 0, 1, 1, 0]         # 私钥 f
+poly_m = [1, 3, 2, 0, 1, 3, 0]         # 明文消息 m
+poly_r = [1, 1, 0, 1, 0, 0, 1]         # 随机多项式 r
+
+# 加密函数
+def encrypt():
+    # r * P 后，使用公钥 h 加密消息
+    temp_r = [(P * r) % Q for r in poly_r]
+    poly_cipher = [(temp_r[i] * poly_h[i] + poly_m[i]) % Q for i in range(N)]
+    return poly_cipher
+
+# 解密函数
+def decrypt(poly_cipher):
+    # 使用私钥 f 解密
+    decrypt_m = [(poly_f[i] * poly_cipher[i]) % Q for i in range(N)]
+    # 调整范围到 -Q/2 到 Q/2
+    half_Q = Q // 2
+    for i in range(N):
+        if decrypt_m[i] > half_Q:
+            decrypt_m[i] -= Q
+        elif decrypt_m[i] < -half_Q:
+            decrypt_m[i] += Q
+    return decrypt_m
+
+# 签名生成函数
+def sign(message):
+    # 加密消息
+    poly_cipher = encrypt()
+    # 使用私钥计算签名
+    signature = [(poly_f[i] * poly_cipher[i]) % P for i in range(N)]
     return signature
 
-def NTRUsign(hash,private):
-    return 
+# 签名验证函数
+def verify(signature):
+    # 解密加密后的多项式
+    poly_cipher = encrypt()
+    decrypt_m = decrypt(poly_cipher)
+    # 检查解密消息是否与签名一致
+    expected_signature = [(poly_f[i] * poly_cipher[i]) % P for i in range(N)]
+    return signature == expected_signature
 
-def VerifySignature(message, signature, public_key):
-    hash = sha256(message)  
-    is_valid = NTRUVerify(hash, signature, public_key)
-    
-    return is_valid
-def NTRUVerify(hash, signature, public_key):
-    return
+# 测试
+if __name__ == "__main__":
+    # 加密
+    cipher = encrypt()
+    print("Cipher:", cipher)
+
+    # 解密
+    decrypted_message = decrypt(cipher)
+    print("Decrypted message:", decrypted_message)
+
+    # 签名
+    signature = sign(poly_m)
+    print("Signature:", signature)
+
+    # 验证签名
+    is_valid = verify(signature)
+    print("Signature valid:", is_valid)
