@@ -11,43 +11,29 @@ logging.basicConfig(filename='client_log.txt', level=logging.INFO, format='%(asc
 client = remote('localhost', 12345)
 logging.info('Connected to server')
 
-"""
-Digital Signature
-"""
-# 生成客户端的私钥和公钥
-client_private_key,client_public_key = get_key()
+# 接收服务器问候
+server_hello = client.recv(1024)
+logging.info(f'Received server hello: {server_hello}')
 
-# 接收服务器公钥
-server_public_key = client.recv(32)
-logging.info(f'Received server public key: {server_public_key.hex()}')
-
-# 发送客户端公钥
-client.send(client_public_key)
-logging.info(f'Sent client public key: {client_public_key.hex()}')
-
-#client hello
-client_hello = b'hello server'
-client.send(client_hello)
-signature = sign_message(client_hello,client_private_key)
+# 签名并发送
+signature = sign(server_hello)
 client.send(signature)
-logging.info(f'Sent client hello')
+logging.info(f'Sent client hello and signature')
 
-#验签
-rcv = client.recv(1024).decode()
-is_valid =VerifySignature(rcv, signature, client_public_key)
+# 验证签名
+rcv = client.recv(1024)
+is_valid = verify(rcv)
 if is_valid:
     print("Signature is valid.")
 else:
     print("Signature is invalid.")
-logging.info(f'Signature ')
-
+logging.info(f'Signature verification result: {is_valid}')
 
 #接收DH参数
 p = int(client.recv(1024).decode())  # 接收并转换 p
 logging.info(f"The server has sent DH parameter p: {p}")
 g = int(client.recv(1024).decode())  # 接收并转换 g
 logging.info(f"The server has sent DH parameter g: {g}")
-
 
 #生成客户端协商私钥公钥
 client_dh_key = generate_private_key()
